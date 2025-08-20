@@ -142,10 +142,19 @@ func ExecuteCommand(cmdWithArgs string) ([]byte, error) {
 }
 
 func ExecuteCommandWithDir(cmdWithArgs, dir string) ([]byte, error) {
-	out, err := ParseCommandWithDir(cmdWithArgs, dir).Output()
+	return ExecuteCommandWithDirAndEnv(cmdWithArgs, dir, nil)
+}
+
+func ExecuteCommandWithDirAndEnv(cmdWithArgs, dir string, env map[string]string) ([]byte, error) {
+	cmd := ParseCommandWithDir(cmdWithArgs, dir)
+
+	for k, v := range env {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	out, err := cmd.Output()
 	if err != nil {
-		exitError, ok := err.(*exec.ExitError)
-		if ok {
+		if exitError, ok := err.(*exec.ExitError); ok {
 			return out, ExecutionError{StdError: exitError.Stderr}
 		}
 	}
